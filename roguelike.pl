@@ -53,6 +53,11 @@ adjacent( [X1, Y1], [X2, Y2] ) :-
     ;   Y1 = Y2, adj(X1, X2)
     ).
 
+isMonster(P) :-
+    monster_locations([P,_,_,_]);
+    monster_locations([_,P,_,_]);
+    monster_locations([_,_,P,_]);
+    monster_locations([_,_,_,P]).
 
 %--------------------------------------------
 % Game setup
@@ -73,22 +78,19 @@ init_agent :-
 
 init_npcs(WS) :-
     retractall( npc_locations(_)),
-    X1 is random(WS), Y1 is random(WS),
-    X2 is random(WS), Y2 is random(WS),
-    X3 is random(WS), Y3 is random(WS),
-    X1 > 0, Y1 > 0,
-    X2 > 0, Y2 > 0,
-    X3 > 0, Y3 > 0,
+    random_between(1, WS, X1), random_between(1, WS, Y1),
+    random_between(1, WS, X2), random_between(1, WS, Y2),
+    random_between(1, WS, X3), random_between(1, WS, Y3),
+
     assert( npc_locations([[julian, [1,1]], [margarette, [X1,Y1]], [nero,[X2,Y2]], [abigail,[X3,Y3]]])).
 
 init_monsters(WS) :-
     retractall( monster_locations(_)),
-    X1 is random(WS), Y1 is random(WS),
-    X2 is random(WS), Y2 is random(WS),
-    X3 is random(WS), Y3 is random(WS),
-    X4 is random(WS), Y4 is random(WS),
-    X1 > 0, X2 > 0, X3 > 0, X4 > 0,
-    Y1 > 0, Y2 > 0, Y3 > 0, Y4 > 0,
+    random_between(1, WS, X1), random_between(1, WS, Y1),
+    random_between(1, WS, X2), random_between(1, WS, Y2),
+    random_between(1, WS, X3), random_between(1, WS, Y3),
+    random_between(1, WS, X4), random_between(1, WS, Y4),
+
     assert( monster_locations([[X1,Y1],[X2,Y2],[X3,Y3],[X4,Y4]])).
 
 
@@ -98,6 +100,20 @@ init_world(WS) :-
     init_agent,
     init_npcs(WS),
     init_monsters(WS).
+
+%------------------------------------------------
+% Utils
+
+not_member(_, []).
+not_member([X,Y], [[U,V]|Ys]) :-
+    ( X=U,Y=V -> fail
+    ; not_member([X,Y], Ys)
+    ).
+
+
+
+
+
 
 
 
