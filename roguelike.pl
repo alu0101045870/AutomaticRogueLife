@@ -7,14 +7,15 @@
        npc_locations/1,
        monster_locations/1,
        trapdoor_location/1,
-%       obst_locations/1,
-       visited/1,
+%       obst_locations/1,            %obstacles in the future
        visited_cells/1,
        name/1,
        gender/1,
-       exp_gained/1,
-       hp/1,
-       atk/1,
+       has_weapon/1,
+       has_key/1,
+%       exp_gained/1,
+%       hp/1,
+%       atk/1,
        npc_nearby/0
    ]).
              % WS = world size, G = gender(0|1), CN = Character name
@@ -100,11 +101,12 @@ where_is(NPC, L) :-
     npc_locations([[_,_], [_,_], [_,_], [NPC, L]]).
 
 see_campfire(yes) :-
-    heroe_location([X,Y]),
-    juli_near([X,Y]);
-    marg_near([X,Y]);
-    nero_near([X,Y]);
-    abby_near([X,Y]).
+    heroe_location(X),
+    (   juli_near(X)
+    ;   marg_near(X)
+    ;   nero_near(X)
+    ;   abby_near(X)
+    ;    false).
 
 see_campfire(no).
 
@@ -153,19 +155,22 @@ init_agent(G, CN) :-
     retractall(name(_)),
     assert(name(CN)),
 
-    retractall( exp_gained(_)),
-    assert( exp_gained(0)),
+%    retractall( exp_gained(_)),
+%    assert( exp_gained(0)),
 
-    retractall( hp(_)),
-    assert( hp(5)),
+%    retractall( hp(_)),
+%    assert( hp(5)),
 
-    retractall( atk(_)),
-    assert( atk(10)),             % Unweapoinzed
+%    retractall( atk(_)),
+%    assert( atk(10)),
+%
+    retractall(has_weapon(_)),
+    assert(has_weapon(no)),        % Start without a weapon
+
+    retractall(has_key(_)),
+    assert(has_key(no)),
 
     retractall(current_goal(_)),   % Start is null
-
-    retractall(visited(_)),
-    assert(visited(1)),
 
     retractall(visited_cells(_)),
     assert(visited_cells([[1,1]]))
@@ -214,7 +219,7 @@ init_world(WS, G, CN) :-
         retractall(visited_cells(_)),
         assert(visited_cells([Xs|Ys])).
 
-    move :-
+    move :-                  %consider adding pathing
         heroe_location(H),
         current_goal(G),
         % visited_cells(V),
@@ -230,6 +235,7 @@ init_world(WS, G, CN) :-
         ;   not(adj(H2, G2)) -> stepToY(G2)
         ;   name(Name),
             format('~p: This is my current goal!', Name)
+
         ),
         heroe_location(X),
         visit(X).
@@ -263,21 +269,33 @@ init_world(WS, G, CN) :-
 
 
     behave :-
-         look_around(Camp, Smell),
+         look_around(Camp, Smell, Wind),
 
-         (  Camp=yes -> talk ).
-         % (Smelly=yes ->).
+         (  Camp=yes -> talk
+         ;   true
+         ),
+         % (Smelly=yes ->). check weapon -> else
+         (  Wind=yes -> try_and_leave
+            ; true
+         ).
+         %Init -> You can move now
 
-         % Here the player is supposed to move
+    try_and_leave :-
+         name(Name),
+         has_key(K),
+         format('\n~p: It looks like the exit is ahead', Name),
+         (   K=yes -> format('\n\n~p (Shouting): I´M OUTA HERE BOIS', Name)
+         ;   format('\n\n~p: Hmmm. I don´t have the key, so I cannot leave yet', Name)
+         ).
+
 
     talk :-
          heroe_location(C),
          visited_cells(L),
-         (   juli_near(C) -> talk_to_julian(L) % take_steps
-          ;  abby_near(C) -> talk_to_abby(L)   % take_steps
-          ;  nero_near(C) -> talk_to_nero(L)   % take_steps
-          ;  marg_near(C) -> talk_to_marg(L)   % take_steps
-          %;  take_steps
+         (   juli_near(C) -> talk_to_julian(L)
+          ;  abby_near(C) -> talk_to_abby(L)
+          ;  nero_near(C) -> talk_to_nero(L)
+          ;  marg_near(C) -> talk_to_marg(L)
          ).
 
     talk_to_julian(L) :-
@@ -287,7 +305,7 @@ init_world(WS, G, CN) :-
              retractall(current_goal(_)),
              where_is(abigail, X),
              assert(current_goal(X)),
-             format('\n\nJULIAN: Oh, so you woke up huh?\n')
+             format('\n\nJULIAN: Oh, so you woke up huh? Always so cryptic, aren´t you? Well, hear me out:\nGo find Abby and ask for the key. She probably has it already. \nHere´s the map- She should be around here\n')
          ;   name(Name),
              format('\n\nJULIAN: Mmmm, hey ~p , are you lost or something?'                    , Name)
          ).
@@ -300,7 +318,8 @@ init_world(WS, G, CN) :-
               where_is(nero, X),
               assert(current_goal(X)),
               name(Name),
-              format('\n\nABIGAIL: Hey ~p! How is JULIAN doing?\nAnyways, I found this KEY. It may be our way out of here, so keep it with you, OK?', Name)
+              format('\n\nABIGAIL: Hey ~p! How is JULIAN doing?\n
+              Anyways, I found this KEY. It may be our way out of here, so keep it with you, OK?', Name)
           ; name(Name),
             format('\n\nABIGAIL: Mmmmm, hey ~p, are you lost or something?', Name)
           ).
@@ -331,13 +350,27 @@ init_world(WS, G, CN) :-
               format('\n\nMARGARETTE: Mmmmm, hey ~p, are you planning on staying here forever?', Name)
           ).
 
-    look_around(Camp,Smell) :-         %Add perception meanings
-         make_percept_sentence([Camp, Smell]),
-         format('(Sensations [~p, ~p]) ',[Camp, Smell]).
+    look_around(Camp,Smell,Wind) :-
+         name(Name),
+         make_percept_sentence([Camp, Smell, Wind]),
 
-    make_percept_sentence([Camp, Smell]) :-
+         %Campings around?
+         (   Camp=yes -> format('~p: I can see a camp\n', Name)
+         ;   format('~p: Nobody around\n', Name)),
+
+         %Monsters around?
+         (   Smell=yes -> format('~p: It smells like Nero´s wardrove!\nThat means monsters are around\n', Name)
+         ;   format('~p: It´s safe here\n', Name)),
+
+         %Exit around?
+         (   Wind=yes -> format('~p: This wind - I must be close to the exit!\n', Name)
+         ;   format('~p: I can´t feel the wind..\n', Name)
+         ).
+
+    make_percept_sentence([Camp, Smell, Wind]) :-
          see_campfire(Camp),
-         smelly(Smell).
+         smelly(Smell),
+         windy(Wind).
 
 %------------------------------------------------
 % Utils
