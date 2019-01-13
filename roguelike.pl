@@ -3,9 +3,10 @@
 
 :- dynamic ([
        heroe_location/1,
-       trapdoor_location/1,
+       current_goal/1,
        npc_locations/1,
        monster_locations/1,
+       trapdoor_location/1,
 %       obst_locations/1,
        visited/1,
        visited_cells/1,
@@ -41,23 +42,24 @@ For that he has to:\n\n
     3. Get to the trapdoor. Margarette probably knows the way\n\n
 
     Aaaand thats about it! You (player) do absolutely nothing.\n
-    But watch closely!' , [CN]);
-
-                format('~p ended up in a subterranean and got separated from her friends.
+    But watch closely!' , [CN])
+    ;           format('~p ended up in a subterranean and got separated from her friends.
 It is her mission to find them and get out of here.\n
 For that she has to:\n\n
     1. Find the key. Abby knows where it is.\n
     2. Get a sword. Nero always has one with him (for some reason).\n
     3. Get to the trapdoor. Margarette probably knows the way\n\n
 
-    Aaaand thats about it! You (player) do absolutely nothing.\n
+    Aaaand thats about it! You (player) dont really have to do much.\n
     But watch closely!\n\n\n' , [CN])
     )
 
+    ,    help
 
     .
 
-
+help :-
+    format('\n\nCommands:\n\n').
 
 
 %------------------------------------
@@ -158,7 +160,16 @@ init_agent(G, CN) :-
     assert( hp(5)),
 
     retractall( atk(_)),
-    assert( atk(10))
+    assert( atk(10)),             % Unweapoinzed
+
+    retractall(current_goal(_)),   % Start is null
+
+    retractall(visited(_)),
+    assert(visited(1)),
+
+    retractall(visited_cells(_)),
+    assert(visited_cells([[1,1]]))
+
     .
 
 init_npcs(WS) :-
@@ -187,13 +198,9 @@ init_world(WS, G, CN) :-
     assert( world_size(WS) ),
 %    init_obst(WS),
 
-    retractall(visited(_)),
-    assert(visited(1)),
-
-    retractall(visited_cells(_)),
-    assert(visited_cells([])),
-
     retractall(trapdoor_location(_)),
+    random_between(1, WS, T1), random_between(1, WS, T2),
+    assert(trapdoor_location([T1, T2])),
 
     init_agent(G, CN),
     init_npcs(WS),
@@ -205,15 +212,126 @@ init_world(WS, G, CN) :-
     visit(Xs) :-
         visited_cells(Ys),
         retractall(visited_cells(_)),
-        assert(visited_cells([Ys|Xs])).
+        assert(visited_cells([Xs|Ys])).
 
-%    take_steps(VisitedList) :-
-%%        look_around(Perception),
-%        heroe_location(HL),
-%        npc_locations(NPCL).
+    walk :-
+        oneStep,       %gives one initial step so move/0 works
+        move.
+
+   % move :-
+    oneStep :-
+        heroe_location([H1, H2]),
+        current_goal([G1, G2]),
+        (   H1 \= G1 -> stepToX(G1)
+        ;   not(adj(H2, G2)) -> stepToY(G2)
+        ;   name(Name),
+            format('~p: This is my current goal!', Name)
+        ).
+
+    stepToX(GoalX) :-
+        heroe_location([H1, H2]),
+        (   NewX is H1+1; NewX is H1-1),   %prolog things: LOGIC
+        (   H1 < GoalX -> NewX is H1+1,
+            retractall(heroe_location(_)),
+            assert(heroe_location([NewX, H2]))
+
+        ;   NewX is H1-1,
+            retractall(heroe_location(_)),
+            assert(heroe_location([NewX, H2]))
+        ).
+
+    stepToY(GoalY) :-
+        heroe_location([H1, H2]),
+        (   NewY is H2+1; NewY is H2-1),
+        (   H2 < GoalY -> NewY is H2+1,
+            (   not(adj(H2, GoalY)) ->
+                  retractall(heroe_location(_)),
+                  assert(heroe_location([H1, NewY]))
+            ;   true)    %prolog's "do nothing"
+        ;   NewY is H2-1,
+            (   not(adj(H2, GoalY)) ->
+                  retractall(heroe_location(_)),
+                  assert(heroe_location([H1, NewY]))
+            ;   true)
+        ).
 
 
+    behave :-
+         look_around(Camp, Smell),
 
+         (  Camp=yes -> talk ).
+         % (Smelly=yes ->).
+
+         % Here the player is supposed to move
+
+    talk :-
+         heroe_location(C),
+         visited_cells(L),
+         (   juli_near(C) -> talk_to_julian(L) % take_steps
+          ;  abby_near(C) -> talk_to_abby(L)   % take_steps
+          ;  nero_near(C) -> talk_to_nero(L)   % take_steps
+          ;  marg_near(C) -> talk_to_marg(L)   % take_steps
+          %;  take_steps
+         ).
+
+    talk_to_julian(L) :-
+          where_is(julian, NpcPos),        %
+         (   not_member(NpcPos, L) ->
+             visit(NpcPos),
+             retractall(current_goal(_)),
+             where_is(abigail, X),
+             assert(current_goal(X)),
+             format('\n\nJULIAN: Oh, so you woke up huh?\n')
+         ;   name(Name),
+             format('\n\nJULIAN: Mmmm, hey ~p , are you lost or something?'                    , Name)
+         ).
+
+    talk_to_abby(L) :-
+          where_is(abigail, NpcPos),
+          (   not_member(NpcPos, L) ->
+              visit(NpcPos),
+              retractall(current_goal(_)),
+              where_is(nero, X),
+              assert(current_goal(X)),
+              name(Name),
+              format('\n\nABIGAIL: Hey ~p! How is JULIAN doing?\nAnyways, I found this KEY. It may be our way out of here, so keep it with you, OK?', Name)
+          ; name(Name),
+            format('\n\nABIGAIL: Mmmmm, hey ~p, are you lost or something?', Name)
+          ).
+
+    talk_to_nero(L) :-
+          where_is(nero, NpcPos),
+          (   not_member(NpcPos, L) ->
+              visit(NpcPos),
+              retractall(current_goal(_)),
+              where_is(margaret, X),
+              assert(current_goal(X)),
+              name(Name),
+              format('\n\nNERO: Long time no see, ~p. Are your survival skills on point? Wait, I dont see you carrying a weapon!\nIm ashamed of calling you a friend! Here is a spare one I SO HAPPEN to have', Name)
+          ;   name(Name),
+              format('\n\nNERO: Mmmmm, hey ~p, are you lost or something?', Name)
+          ).
+
+    talk_to_marg(L) :-
+          where_is(margarette, NpcPos),
+          (   not_member(NpcPos, L) ->
+              visit(NpcPos),
+              retractall(current_goal(_)),
+              trapdoor_location(X),
+              assert(current_goal(X)),
+              name(Name),
+              format('\n\nMARGARETTE: It sure took you a while ~p. Anyways, lets get going already. I will tell you where the exit is ', Name)
+          ;   name(Name),
+              format('\n\nMARGARETTE: Mmmmm, hey ~p, are you planning on staying here forever?', Name)
+          ).
+
+    look_around(Camp,Smell) :-         %Add perception meanings
+         make_percept_sentence([Camp, Smell]),
+         format('(Sensations [~p, ~p]) ',[Camp, Smell]).
+
+    make_percept_sentence([Camp, Smell]) :-
+         see_campfire(Camp),
+         smelly(Smell).
 
 %------------------------------------------------
 % Utils
@@ -223,6 +341,26 @@ not_member([X,Y], [[U,V]|Ys]) :-
     ( X=U,Y=V -> fail
     ; not_member([X,Y], Ys)
     ).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
