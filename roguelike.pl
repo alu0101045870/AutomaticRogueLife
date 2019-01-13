@@ -113,7 +113,7 @@ juli_near(Loc) :-
     adjacent(X, Loc).
 
 marg_near(Loc) :-
-    npc_locations([[_, _],[_, X],[_, _],[_, _]]),
+    npc_locations([[_, _],[_, _],[_, _],[_, X]]),
     adjacent(X, Loc).
 
 nero_near(Loc) :-
@@ -121,7 +121,7 @@ nero_near(Loc) :-
     adjacent(X, Loc).
 
 abby_near(Loc) :-
-    npc_locations([[_, _],[_, _],[_, _],[_, X]]),
+    npc_locations([[_, _],[_, X],[_, _],[_, _]]),
     adjacent(X, Loc).
 
         % Monsters smell... duh
@@ -214,11 +214,15 @@ init_world(WS, G, CN) :-
         retractall(visited_cells(_)),
         assert(visited_cells([Xs|Ys])).
 
-    walk :-
-        oneStep,       %gives one initial step so move/0 works
-        move.
+    move :-
+        heroe_location(H),
+        current_goal(G),
+        % visited_cells(V),
+        (   not(adjacent(H, G)) -> oneStep, move
+        ;   name(Name),
+            format('~p: Lets see what I can do', Name)
+        ).
 
-   % move :-
     oneStep :-
         heroe_location([H1, H2]),
         current_goal([G1, G2]),
@@ -226,7 +230,9 @@ init_world(WS, G, CN) :-
         ;   not(adj(H2, G2)) -> stepToY(G2)
         ;   name(Name),
             format('~p: This is my current goal!', Name)
-        ).
+        ),
+        heroe_location(X),
+        visit(X).
 
     stepToX(GoalX) :-
         heroe_location([H1, H2]),
