@@ -69,6 +69,7 @@ En cuanto a las dificultades a lo largo del desarrollo del programa, a modo de c
   - El enfoque del programa está en constante evolución. Por un lado eso me aporta flexibilidad en el desarrollo, lo cual está bien; pero por otro, implica que tengo que *limitar* mi propia imaginación y proponerme metas realistas a corto plazo si quiero avanzar. 
   - La extensión del código aumenta exponencialmente con cada añadido y el editor de Prolog (al menos para Windows) es, a veces, incómodo, por lo que debo llevar un seguimiento de lo que hago y dejo de hacer. Para esto ha ayudado el control de versiones en git.
   - La adaptación de mis conocimientos generales de programación a la programación lógica supuso un reto al principio, pero todo es cuestión de acostumbrarse, supongo. Y de saber cómo funciona la lógica proposicional.  
+  - La encapsulación que ofrece Prolog es bastante limitada. Esto es un inconveniente grande para un videojuego real, ya que tienes que confiar en la buena fé del usuario y... no suele ser una buena idea para un producto software. Sin embargo, puesto que esto no entra dentro de esa clasificación, no hay problema. 
 ###### *Nota de versión (1.0): Aunque la complejidad del diálogo en este momento no es extremadamente alta  
 
 ### Futuras versiones
