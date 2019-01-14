@@ -58,3 +58,25 @@ A partir de aquí, el patrón de juego es relativamente simple y cuenta con los 
   
   
 ### Desarrollo del programa
+> Descripción breve de la fase de desarrollo del programa en alto nivel.
+
+La idea está inspirada en el modelo de "El Mundo de Wumpus" y como ya mencioné, en los videojuegos de rol antiguos*. Muchos de los conceptos estaban en mi cabeza desde el principio, pero también he tenido que tomar decisiones de implementación sobre la marcha, ya que mi planteamiento inicial no era perfecto (normalmente por no ajustarse *perfectamente* a la lógica proposicional del lenguaje).
+
+Ya que es mi segundo idioma natural, por comodidad y escalabilidad he escrito todo el programa directamente en inglés.
+
+En cuanto a las dificultades a lo largo del desarrollo del programa, a modo de curiosidad, las comento a continuación:
+  - Empecé el programa teniendo una idea muy básica de Prolog, así que ha supuesto un trabajo de investigación extra. Además, como probablemente a todo el que empiece con el lenguaje, ha sido especialmente complicado habituarme a lo estricto de las formas lógicas y al cambio de paradigma.
+  - El enfoque del programa está en constante evolución. Por un lado eso me aporta flexibilidad en el desarrollo, lo cual está bien; pero por otro, implica que tengo que *limitar* mi propia imaginación y proponerme metas realistas a corto plazo si quiero avanzar. 
+  - La extensión del código aumenta exponencialmente con cada añadido y el editor de Prolog (al menos para Windows) es, a veces, incómodo, por lo que debo llevar un seguimiento de lo que hago y dejo de hacer. Para esto ha ayudado el control de versiones en git.
+  - La adaptación de mis conocimientos generales de programación a la programación lógica supuso un reto al principio, pero todo es cuestión de acostumbrarse, supongo. Y de saber cómo funciona la lógica proposicional.  
+###### *Nota de versión (1.0): Aunque la complejidad del diálogo en este momento no es extremadamente alta  
+
+### Futuras versiones
+> Ideas para futuras implementaciones y funcionalidades.
+  
+  - Mejora y mayor complejidad de la interacción con monstruos.
+  - Mejora de los diálogos y posible introducción de decisiones.
+  - Diferentes rangos de monstruos, boss final y stats para el personaje y enemigos.
+  - Mejora del sistema de armas
+  
+
