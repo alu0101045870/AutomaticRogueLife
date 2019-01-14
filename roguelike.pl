@@ -16,7 +16,8 @@
 %       exp_gained/1,
 %       hp/1,
 %       atk/1,
-       npc_nearby/0
+       npc_nearby/0,
+       visited_friends/1
    ]).
              % WS = world size, G = gender(0|1), CN = Character name
 start(WS, G, CN) :-
@@ -55,12 +56,17 @@ For that she has to:\n\n
     But watch closely!\n\n\n' , [CN])
     )
 
-    ,    help
+    ,    help_me
 
     .
 
-help :-
-    format('\n\nCommands:\n\n').
+help_me :-
+    format('\n\nCommands:\n\n
+    - "start."   -> Start game with random values.\n
+    - "behave."  -> Interact with surroundings (talk, check on monsters, etc)\n
+    - "move."    -> Move automatically to checkpoint.\n
+    - "oneStep." -> Take only ONE STEP towards the goal (may be useful when monsters are around!)\n
+    (TIPS): Moving without a goal is not a good idea. It´d be better to check on your surroundings first!').
 
 
 %------------------------------------
@@ -144,6 +150,9 @@ windy(no).
 
 %--------------------------------------------
 % Game setup
+game_over :-
+    format('\n\n          GAME OVER         \n\n
+    Please, if you want to start again, type "start."').
 
 init_agent(G, CN) :-
     retractall( heroe_location(_)),
@@ -173,8 +182,10 @@ init_agent(G, CN) :-
     retractall(current_goal(_)),   % Start is null
 
     retractall(visited_cells(_)),
-    assert(visited_cells([[1,1]]))
+    assert(visited_cells([[1,1]])),
 
+    retractall(visited_friends(_)),
+    assert(visited_friends([no, no, no ,no]))
     .
 
 init_npcs(WS) :-
@@ -219,13 +230,15 @@ init_world(WS, G, CN) :-
         retractall(visited_cells(_)),
         assert(visited_cells([Xs|Ys])).
 
-    move :-                  %consider adding pathing
+    move :-
         heroe_location(H),
         current_goal(G),
-        % visited_cells(V),
-        (   not(adjacent(H, G)) -> oneStep, move
+        visited_cells([[X,Y]|_]),
+        format('Visited: [~w,~w]\n', [X, Y]),
+        (   not(adjacent(H, G))  ->
+            oneStep, move
         ;   name(Name),
-            format('~p: Lets see what I can do', Name)
+            format('\n~p: Woah, something´s up...Lets see what I can do', Name)
         ).
 
     oneStep :-
@@ -284,8 +297,13 @@ init_world(WS, G, CN) :-
          name(Name),
          has_key(K),
          format('\n~p: It looks like the exit is ahead', Name),
-         (   K=yes -> format('\n\n~p (Shouting): I´M OUTA HERE BOIS', Name)
-         ;   format('\n\n~p: Hmmm. I don´t have the key, so I cannot leave yet', Name)
+         (   K=yes -> format('\n\n~p (Shouting): I´M OUTA HERE BOIS', Name),
+                      game_over
+
+         ;   where_is(abigail, AbPos),
+             retractall(current_goal(_)),
+             assert(current_goal(AbPos)),
+             format('\n\n~p: Hmmm. I don´t have the key, so I cannot leave yet\nI have to find Abby first', Name)
          ).
 
 
@@ -308,7 +326,11 @@ init_world(WS, G, CN) :-
              format('\n\nJULIAN: Oh, so you woke up huh? Always so cryptic, aren´t you? Well, hear me out:\nGo find Abby and ask for the key. She probably has it already. \nHere´s the map- She should be around here\n')
          ;   name(Name),
              format('\n\nJULIAN: Mmmm, hey ~p , are you lost or something?'                    , Name)
-         ).
+         ),
+         visited_friends([_, Abb, Ner, Mar]),
+         retractall(visited_friends(_)),
+         assert(visited_friends([yes, Abb, Ner, Mar]))
+         .
 
     talk_to_abby(L) :-
           where_is(abigail, NpcPos),
@@ -319,10 +341,14 @@ init_world(WS, G, CN) :-
               assert(current_goal(X)),
               name(Name),
               format('\n\nABIGAIL: Hey ~p! How is JULIAN doing?\n
-              Anyways, I found this KEY. It may be our way out of here, so keep it with you, OK?', Name)
+Anyways, I found this KEY. It may be our way out of here, so keep it with you, OK?', Name)
           ; name(Name),
             format('\n\nABIGAIL: Mmmmm, hey ~p, are you lost or something?', Name)
-          ).
+          ),
+         visited_friends([Jul, _, Ner, Mar]),
+         retractall(visited_friends(_)),
+         assert(visited_friends([Jul, yes, Ner, Mar]))
+          .
 
     talk_to_nero(L) :-
           where_is(nero, NpcPos),
@@ -335,7 +361,11 @@ init_world(WS, G, CN) :-
               format('\n\nNERO: Long time no see, ~p. Are your survival skills on point? Wait, I dont see you carrying a weapon!\nIm ashamed of calling you a friend! Here is a spare one I SO HAPPEN to have', Name)
           ;   name(Name),
               format('\n\nNERO: Mmmmm, hey ~p, are you lost or something?', Name)
-          ).
+          ),
+          visited_friends([Jul, Abb, _, Mar]),
+          retractall(visited_friends(_)),
+          assert(visited_friends([Jul, Abb, yes, Mar]))
+          .
 
     talk_to_marg(L) :-
           where_is(margarette, NpcPos),
@@ -348,7 +378,12 @@ init_world(WS, G, CN) :-
               format('\n\nMARGARETTE: It sure took you a while ~p. Anyways, lets get going already. I will tell you where the exit is ', Name)
           ;   name(Name),
               format('\n\nMARGARETTE: Mmmmm, hey ~p, are you planning on staying here forever?', Name)
-          ).
+          ),
+          visited_friends([Jul, Abb, Ner, _]),
+          retractall(visited_friends(_)),
+          assert(visited_friends([Jul, Abb, Ner, yes]))
+
+          .
 
     look_around(Camp,Smell,Wind) :-
          name(Name),
