@@ -227,8 +227,13 @@ init_world(WS, G, CN) :-
 
     visit(Xs) :-
         visited_cells(Ys),
-        retractall(visited_cells(_)),
-        assert(visited_cells([Xs|Ys])).
+        npc_locations([[_, J], [_, A], [_, N], [_, M]]),
+
+        (   J \= Xs, A \= Xs, N \= Xs, M \= Xs ->
+            retractall(visited_cells(_)),
+            assert(visited_cells([Xs|Ys]))
+        ;   true
+        ).
 
     move :-
         heroe_location(H),
@@ -236,8 +241,10 @@ init_world(WS, G, CN) :-
         visited_cells([[X,Y]|_]),
         format('Visited: [~w,~w]\n', [X, Y]),
         (   not(adjacent(H, G))  ->
+
             oneStep, move
         ;   name(Name),
+            look_around(Camp, Smell, Wind),
             format('\n~p: Woah, something´s up...Lets see what I can do', Name)
         ).
 
@@ -282,16 +289,25 @@ init_world(WS, G, CN) :-
 
 
     behave :-
-         look_around(Camp, Smell, Wind),
+         make_percept_sentence([Camp, Smell, Wind]),
 
          (  Camp=yes -> talk
          ;   true
          ),
-         % (Smelly=yes ->). check weapon -> else
+         ( Smell=yes -> monster_around
+         ;   true
+         ),
          (  Wind=yes -> try_and_leave
             ; true
          ).
-         %Init -> You can move now
+
+    monster_around :-
+         name(Name),
+         has_weapon(X),
+         (   X=no ->
+         format('\n\n~p: I´m near a monster. I better walk slowly to avoid getting', Name)
+         ;   true
+         ).
 
     try_and_leave :-
          name(Name),
@@ -310,16 +326,31 @@ init_world(WS, G, CN) :-
     talk :-
          heroe_location(C),
          visited_cells(L),
-         (   juli_near(C) -> talk_to_julian(L)
-          ;  abby_near(C) -> talk_to_abby(L)
-          ;  nero_near(C) -> talk_to_nero(L)
-          ;  marg_near(C) -> talk_to_marg(L)
+         (   juli_near(C) ->
+                 where_is(julian, J),
+                 retractall(visited_cells(_)),
+                 assert(visited_cells([J|L])),
+                 talk_to_julian(L)
+          ;  abby_near(C) ->
+                 where_is(abigail, A),
+                 retractall(visited_cells(_)),
+                 assert(visited_cells([A|L])),
+                 talk_to_abby(L)
+          ;  nero_near(C) ->
+                 where_is(nero, N),
+                 retractall(visited_cells(_)),
+                 assert(visited_cells([N|L])),
+                 talk_to_nero(L)
+          ;  marg_near(C) ->
+                 where_is(margarette, M),
+                 retractall(visited_cells(_)),
+                 assert(visited_cells([M|L])),
+                 talk_to_marg(L)
          ).
 
     talk_to_julian(L) :-
           where_is(julian, NpcPos),        %
          (   not_member(NpcPos, L) ->
-             visit(NpcPos),
              retractall(current_goal(_)),
              where_is(abigail, X),
              assert(current_goal(X)),
@@ -335,11 +366,12 @@ init_world(WS, G, CN) :-
     talk_to_abby(L) :-
           where_is(abigail, NpcPos),
           (   not_member(NpcPos, L) ->
-              visit(NpcPos),
-              retractall(current_goal(_)),
+              retractall(current_goal(_)),   %change goal
               where_is(nero, X),
               assert(current_goal(X)),
               name(Name),
+              retractall(has_key(_)),        %get key
+              assert(has_key(yes)),
               format('\n\nABIGAIL: Hey ~p! How is JULIAN doing?\n
 Anyways, I found this KEY. It may be our way out of here, so keep it with you, OK?', Name)
           ; name(Name),
@@ -353,24 +385,24 @@ Anyways, I found this KEY. It may be our way out of here, so keep it with you, O
     talk_to_nero(L) :-
           where_is(nero, NpcPos),
           (   not_member(NpcPos, L) ->
-              visit(NpcPos),
-              retractall(current_goal(_)),
-              where_is(margaret, X),
+              where_is(margarette, X),
+              retractall(current_goal(_)),    %change goal
               assert(current_goal(X)),
               name(Name),
+              retractall(has_weapon(_)),      %get weapon
+              assert(has_weapon(yes)),
               format('\n\nNERO: Long time no see, ~p. Are your survival skills on point? Wait, I dont see you carrying a weapon!\nIm ashamed of calling you a friend! Here is a spare one I SO HAPPEN to have', Name)
           ;   name(Name),
               format('\n\nNERO: Mmmmm, hey ~p, are you lost or something?', Name)
           ),
-          visited_friends([Jul, Abb, _, Mar]),
-          retractall(visited_friends(_)),
-          assert(visited_friends([Jul, Abb, yes, Mar]))
+         visited_friends([Jul, Abb, _, Mar]),
+         retractall(visited_friends(_)),
+         assert(visited_friends([Jul, Abb, yes, Mar]))
           .
 
     talk_to_marg(L) :-
           where_is(margarette, NpcPos),
           (   not_member(NpcPos, L) ->
-              visit(NpcPos),
               retractall(current_goal(_)),
               trapdoor_location(X),
               assert(current_goal(X)),
