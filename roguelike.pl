@@ -236,13 +236,26 @@ init_world(WS, G, CN) :-
         ).
 
     move :-
+        %ATM only checks monsters around at the start
+        mon_check.
+
+    moving :-
         heroe_location(H),
         current_goal(G),
         (   not(adjacent(H, G)) ->
-            oneStep, move
+                oneStep, moving           %recursion may happen
         ;   name(Name),
             look_around(Camp, Smell, Wind),
             format('\n~p: Woah, something´s up...Lets see what I can do', Name)
+        ).
+
+    mon_check :-
+        smelly(S),
+        (   S = yes ->
+                format('\n\nYou DED\n\n
+                   GAME OVER\n\nPlease restrart (start.)')
+
+        ;   oneStep, moving
         ).
 
     oneStep :-
@@ -289,16 +302,16 @@ init_world(WS, G, CN) :-
 
 
     behave :-
-         make_percept_sentence([Camp, Smell, Wind]),
+         look_around(Camp, Smell, Wind),
 
          (  Camp=yes -> talk
-         ;   true
+         ;   fail
          ),
          ( Smell=yes -> monster_around
-         ;   true
+         ;   fail
          ),
          (  Wind=yes -> try_and_leave
-            ; true
+         ;   fail
          ).
 
     monster_around :-
