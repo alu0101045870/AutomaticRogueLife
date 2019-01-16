@@ -238,10 +238,7 @@ init_world(WS, G, CN) :-
     move :-
         heroe_location(H),
         current_goal(G),
-        visited_cells([[X,Y]|_]),
-        format('Visited: [~w,~w]\n', [X, Y]),
-        (   not(adjacent(H, G))  ->
-
+        (   not(adjacent(H, G)) ->
             oneStep, move
         ;   name(Name),
             look_around(Camp, Smell, Wind),
@@ -258,7 +255,10 @@ init_world(WS, G, CN) :-
 
         ),
         heroe_location(X),
-        visit(X).
+        visit(X),
+        visited_cells([[V1,V2]|_]),
+        format('Visited: [~w,~w]\n', [V1, V2])
+        .
 
     stepToX(GoalX) :-
         heroe_location([H1, H2]),
@@ -303,15 +303,21 @@ init_world(WS, G, CN) :-
 
     monster_around :-
          name(Name),
-         has_weapon(X),
-         (   X=no ->
-         format('\n\n~p: I´m near a monster. I better walk slowly to avoid getting', Name)
-         ;   true
+         smelly(S),
+         (   S=yes ->
+             has_weapon(X),
+            (   X=no ->
+            format('\n\n~p: I´m near a monster. I better walk slowly to avoid getting', Name)
+            ;   true
+            )
+         ;    fail
          ).
 
     try_and_leave :-
          name(Name),
          has_key(K),
+         windy(W),
+         (   W=yes ->
          format('\n~p: It looks like the exit is ahead', Name),
          (   K=yes -> format('\n\n~p (Shouting): I´M OUTA HERE BOIS', Name),
                       game_over
@@ -320,7 +326,8 @@ init_world(WS, G, CN) :-
              retractall(current_goal(_)),
              assert(current_goal(AbPos)),
              format('\n\n~p: Hmmm. I don´t have the key, so I cannot leave yet\nI have to find Abby first', Name)
-         ).
+         ;   fail
+         )).
 
 
     talk :-
