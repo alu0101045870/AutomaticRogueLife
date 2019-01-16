@@ -52,9 +52,11 @@ Para poner en marcha el juego con nuevos valores de aleatoriedad y desde el inic
 ###### Nota de versión(1.0): 
 A partir de aquí, el patrón de juego es relativamente simple y cuenta con los siguientes comandos:
   - **"behave"** -> ordena al agente interactuar con el entorno. Esta interacción supone hablar con NPC's, actuar ante monstruos o abrir la trampilla para salir (si se tiene la llave, claro)
-  - **"move"** -> ordena al agente desplazarse hacia la meta actual. El agente se parará si encuentra a alguien o algo por el camino digno de su atención.
-  - **"oneStep"** -> Avanza solo un paso hacia la meta actual. (Puede resultar más útil en futuras versiones)
-  - **"help"** -> Muestra la ayuda de comandos.
+  - **"move"** -> ordena al agente desplazarse hacia la meta actual. Si al inicio del trayecto hay un monstruo lo despertará.   
+  - **"talk"** -> Habla con la persona cercana. **//BUG REPORT:** Existe la posibilidad de conflicto si tienes varios NPCs cerca al mismo tiempo.
+  - **"try_and_leave"** -> Si tienes la llave y estás cerca de la salida, puedes irte.
+  - **"oneStep"** -> Avanza solo un paso hacia la meta actual. No despiertas a los monstruos si le indicas esta acción.
+  - **"help_me"** -> Muestra la ayuda de comandos.
   
   
 ### Desarrollo del programa
@@ -79,5 +81,5 @@ En cuanto a las dificultades a lo largo del desarrollo del programa, a modo de c
   - Mejora de los diálogos y posible introducción de decisiones.
   - Diferentes rangos de monstruos, boss final y stats para el personaje y enemigos.
   - Mejora del sistema de armas
-  
+  - El agente se parará si encuentra a alguien o algo por el camino digno de su atención.   
 
