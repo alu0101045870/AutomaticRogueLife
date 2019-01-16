@@ -64,6 +64,8 @@ help_me :-
     format('\n\nCommands:\n\n
     - "start."   -> Start game with random values.\n
     - "behave."  -> Interact with surroundings (talk, check on monsters, etc)\n
+    - "talk."    -> Talk to friend if around.\n
+    - "try_and_leave." -> If near the exit and you have key, leave.\n
     - "move."    -> Move automatically to checkpoint.\n
     - "oneStep." -> Take only ONE STEP towards the goal (may be useful when monsters are around!)\n
     (TIPS): Moving without a goal is not a good idea. It´d be better to check on your surroundings first!').
@@ -252,9 +254,14 @@ init_world(WS, G, CN) :-
     mon_check :-
         smelly(S),
         (   S = yes ->
+            has_weapon(X),
+           (   X = no ->
                 format('\n\nYou DED\n\n
                    GAME OVER\n\nPlease restrart (start.)')
-
+           ;   X = yes ->
+                format('\n\nYou killed a monster that blocked the way!'),
+                oneStep, moving
+           )
         ;   oneStep, moving
         ).
 
